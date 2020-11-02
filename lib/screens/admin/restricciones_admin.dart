@@ -1,0 +1,742 @@
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:tuple/tuple.dart';
+import 'package:cfhc/models/alergia.dart';
+import 'package:cfhc/models/categoria_alimento.dart';
+import 'package:cfhc/models/components.dart';
+import 'package:cfhc/models/enfermedad.dart';
+import 'package:cfhc/models/estilo_vida.dart';
+import 'package:cfhc/models/restriccion.dart';
+import 'package:cfhc/partials/dialogs.dart';
+import 'package:cfhc/partials/left_nav.dart';
+import 'package:cfhc/providers/componentes_provider.dart';
+import 'package:cfhc/providers/encuesta_provider.dart';
+import 'package:cfhc/providers/restriccion_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class RestriccionesAdmin extends StatefulWidget {
+  RestriccionesAdmin() : super();
+
+  @override
+  _RestriccionesAdminState createState() => _RestriccionesAdminState();
+}
+
+class _RestriccionesAdminState extends State<RestriccionesAdmin> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  bool _agreedToTOS = true;
+  String alergia = "";
+  EncuestaProvider encuestaProv;
+  
+  List<DropdownMenuItem> list = List<DropdownMenuItem>();
+  List<DropdownMenuItem> list2 = List<DropdownMenuItem>();
+  Map dropDownItemsMap;
+  Map dropDownItemsMap2;
+
+  Map dropDownItemsMapEstilo;
+  Map dropDownItemsMapAlergias;
+  Map dropDownItemsMapEnfermedades;
+  Map dropDownItemsMapComponentes;
+  Map dropDownItemsMapCategorias;
+  
+  List<DropdownMenuItem> listEstilo = List<DropdownMenuItem>();
+  List<DropdownMenuItem> listAlergia = List<DropdownMenuItem>();
+  List<DropdownMenuItem> listEnfermedades = List<DropdownMenuItem>();
+  List<DropdownMenuItem> listComponentes = List<DropdownMenuItem>();
+  List<DropdownMenuItem> listCategorias = List<DropdownMenuItem>();
+
+  Alergia _selectedAlergias;
+  Enfermedad _selectedEnfermedades;
+  EstiloVida _selectedEstilo;
+  
+  Components _selectedComponente;
+  CategoriaAlimento _selectedCategoria;
+
+  ComponenteProvider componenteProv;
+  RestriccionProvider restriccionProv;
+
+  List<DropdownMenuItem> listCausante = List<DropdownMenuItem>();
+  Map dropDownItemsMapCausante;
+
+  String causante = 'Causante';
+  String restriccion = 'Restriccion';
+  String tipo = 'Tipo';
+
+  GlobalKey _keyLoader = new GlobalKey();
+
+  List<DropdownMenuItem> getSelectEstiloVida(List<EstiloVida> estilos){ // poner la lista que esta arriba devuelve list
+    dropDownItemsMapEstilo = new Map();
+    listEstilo.clear();
+    estilos.forEach((estilos) {
+      int index = estilos.id;
+      dropDownItemsMapEstilo[index] = estilos;
+      listEstilo.add(new DropdownMenuItem(
+        child: Text(estilos.nombre),
+        value: estilos.id)
+      );
+    });
+    return listEstilo;
+  }
+
+  List<DropdownMenuItem> getSelectAlergias(List<Alergia> als){ // poner la lista que esta arriba devuelve list
+    dropDownItemsMapAlergias = new Map();
+    listAlergia.clear();
+    als.forEach((alergia) {
+      int index = alergia.id;
+      dropDownItemsMapAlergias[index] = alergia;
+      listAlergia.add(new DropdownMenuItem(
+        child: Text(alergia.nombre),
+        value: alergia.id)
+      );
+    });
+    return listAlergia;
+  }
+
+  List<DropdownMenuItem> getSelectEnfermedades(List<Enfermedad> enfer){ // poner la lista que esta arriba devuelve list
+    dropDownItemsMapEnfermedades = new Map();
+    listEnfermedades.clear();
+    enfer.forEach((enfermedad) {
+      int index = enfermedad.id;
+      dropDownItemsMapEnfermedades[index] = enfermedad;
+      listEnfermedades.add(new DropdownMenuItem(
+        child: Text(enfermedad.nombre),
+        value: enfermedad.id)
+      );
+    });
+    return listEnfermedades;
+  }
+
+
+  List<DropdownMenuItem> getSelectComponentes(List<Components> comp){ // poner la lista que esta arriba devuelve list
+    dropDownItemsMapComponentes = new Map();
+    listComponentes.clear();
+    comp.forEach((componentes) {
+      print(componentes.id);
+      int index = componentes.id;
+      dropDownItemsMapComponentes[index] = componentes;
+      list.add(new DropdownMenuItem(
+        child: Text(componentes.nombre),
+        value: componentes.id)
+      );
+    });
+    return list;
+  }
+
+  List<DropdownMenuItem> getSelectCategorias(List<CategoriaAlimento> prod){ // poner la lista que esta arriba devuelve list
+    dropDownItemsMapCategorias = new Map();
+    listCategorias.clear();
+    prod.forEach((productos) {
+      print(productos.id);
+      int index = productos.id;
+      dropDownItemsMapCategorias[index] = productos;
+      list2.add(new DropdownMenuItem(
+        child: Text(productos.nombre),
+        value: productos.id)
+      );
+    });
+    return list2;
+  }
+
+  List<DropdownMenuItem> getCausante(String causante, List<Alergia> als, List<Enfermedad> enfer, List<EstiloVida> estilos){
+    if(causante == 'Alergias'){
+      return getSelectAlergias(als);
+    } if(causante == 'Enfermedades'){
+      return getSelectEnfermedades(enfer);
+    } else if(causante == 'Estilo de Vida'){
+      return getSelectEstiloVida(estilos);
+    } else{
+      return [];
+    }
+  }
+
+  List<DropdownMenuItem> getRestriccion(String rest, List<Components> als, List<CategoriaAlimento> enfer){
+    if(rest == 'Componentes'){
+      return getSelectComponentes(als);
+    } if(rest == 'Categoria Alimento'){
+      return getSelectCategorias(enfer);
+    } else{
+      return [];
+    }
+  }
+
+  Widget textoUno(String causante, Alergia als, Enfermedad enfer, EstiloVida estilos){
+    if(causante == "Alergias"){
+      if(als != null) {
+        return Text(als.nombre);
+      } else {
+        return Text(causante);
+      }    
+    } else if(causante == "Enfermedades"){
+      if(enfer != null){
+        return Text(enfer.nombre);
+      } else{
+        return Text(causante);
+      }
+      
+    } else if(causante == "Estilo de Vida"){
+      if(estilos != null) {
+        return Text(estilos.nombre);
+      } else{
+        return Text(causante);
+      }   
+    }
+  }
+
+  Widget textoDos(String rest, Components comp, CategoriaAlimento cat){
+    if(rest == "Componentes"){
+      if(comp != null) {
+        return Text(comp.nombre);
+      } else {
+        return Text(rest);
+      }    
+    } if(rest == "Categoria Alimento"){
+      if(cat != null){
+        return Text(cat.nombre);
+      } else{
+        return Text(rest);
+      }
+      
+    }
+  }
+
+  List<TableRow> getTableRows(List<Restriccion> items){ // poner la lista que esta arriba devuelve list
+    List<TableRow> tableRows = List<TableRow>();
+    items.forEach((e) { 
+      tableRows.add(
+        TableRow(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(width: 1.0, color: Colors.grey[400]),
+            ),
+          ),
+          children: [
+            Text(e.causante + " > " + e.restriccion + " | " + e.tipo.toUpperCase()),
+            IconButton(
+              icon: Icon(Icons.edit,color: Colors.orange[400]),
+              onPressed: () { showUpdDialog(context,e.id, e.tipo); }
+            ),
+            IconButton(
+              icon: Icon(Icons.delete,color: Colors.red[400]),
+              onPressed: () { showAlertDialog(context,e.id); }
+            )
+        ]),
+      );
+    });
+
+    return tableRows;
+  }
+
+  void registrarRestriccion() {
+    int idCausante = 0;
+    int idRestriccion = 0;
+    String por = '';
+    String de = '';
+
+    if(causante == "Alergias"){
+      por = 'alergia';
+      idCausante = _selectedAlergias.id;
+    } else if(causante == "Enfermedades"){
+      por = 'enfermedad';
+      idCausante = _selectedEnfermedades.id;
+    } else if(causante == "Estilo de Vida"){
+      por = 'estilo_vida';
+      idCausante = _selectedEstilo.id;
+    }
+
+    if(restriccion == "Componentes"){
+      de = 'componente';
+      idRestriccion = _selectedComponente.id;
+    } if(restriccion == "Categoria Alimento"){
+      de = 'categoria_alimento';
+      idRestriccion = _selectedCategoria.id;      
+    }
+
+    Restriccion rest = new Restriccion();
+    rest.id_causante = idCausante;
+    rest.id_restriccion = idRestriccion;
+    rest.tipo = tipo;
+    rest.por = por;
+    rest.de = de;
+
+    Dialogs.mostrarLoadingDialog(context,_keyLoader, "Actualizando");
+    restriccionProv.registrarRestriccion(rest).then( (value) {
+      Navigator.of(_keyLoader.currentContext,rootNavigator: true).pop();
+      if (value) {
+        Dialogs.mostrarDialog(context, "Éxito", "Se registró con éxito la Restricción");
+      } else {
+        Dialogs.mostrarDialog(context, "Error", "Error al registrar la Restricción");
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    componenteProv = Provider.of<ComponenteProvider>(context);
+    encuestaProv = Provider.of<EncuestaProvider>(context);
+    restriccionProv = Provider.of<RestriccionProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Restricciones'),
+        centerTitle: true,
+        elevation: 0.0,
+      ),
+      drawer: LeftNav().getLeftMenu2(context),
+      body: SingleChildScrollView(
+        child: 
+        Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
+
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 5), 
+              child: Form(
+                key: _formKey,
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+
+                    Text('Causante', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),),
+                    SizedBox(width: 5,),
+                    Expanded(
+                        child: Container(
+                          padding: EdgeInsets.fromLTRB(15, 0, 10, 0),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton(
+                              isExpanded: true,
+                              items: <String>['Alergias', 'Enfermedades', 'Estilo de Vida']
+                              .map<DropdownMenuItem<String>>((String value){
+                                return DropdownMenuItem<String>(
+                                  child: Text(value),
+                                  value: value,
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                causante = value;
+                                setState(() {
+                                  causante = value;
+                                });
+                              },
+                              hint: new Text(causante),
+                            ),
+                          ),
+                        ),
+                      ),                    
+                  ],
+                ),
+              ),           
+            ),
+
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 10, 20, 5), 
+              child: Form(
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Expanded(
+                        child: Selector<EncuestaProvider, List<Alergia>>(
+                          selector: (context, model) => model.alergias,
+                          builder: (context, alergias, widget) => 
+                          Selector<EncuestaProvider, List<Enfermedad>>(
+                            selector: (context, model) => model.enfermedades,
+                            builder: (context, enfermedades, widget) =>
+                            Selector<EncuestaProvider, List<EstiloVida>>(
+                              selector: (context, model) => model.estilosVida,
+                              builder: (context, estilosVida, widget) => Column(
+                                children: <Widget>[   
+                                  Container(
+                                    padding: EdgeInsets.fromLTRB(15, 0, 10, 0),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.all(Radius.circular(20))
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton(
+                                        isExpanded: true,                                             
+                                        items: getCausante(causante, alergias, enfermedades, estilosVida),
+                                        onChanged: (value){
+                                          if(causante == "Alergias"){
+                                            _selectedAlergias = dropDownItemsMapAlergias[value];
+                                            setState(() {
+                                            _selectedAlergias = dropDownItemsMapAlergias[value];
+                                            });
+                                          } if(causante == "Enfermedades") {
+                                            _selectedEnfermedades = dropDownItemsMapEnfermedades[value];
+                                            setState(() {
+                                            _selectedEnfermedades = dropDownItemsMapEnfermedades[value];
+                                            });
+                                          } if(causante == "Estilo de Vida"){
+                                            _selectedEstilo = dropDownItemsMapEstilo[value];
+                                            setState(() {
+                                            _selectedEstilo = dropDownItemsMapEstilo[value];
+                                            });
+                                          } else{}
+                                        },
+                                        hint: textoUno(causante, _selectedAlergias, _selectedEnfermedades, _selectedEstilo),
+                                      ),
+                                    ),
+                                  ) 
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),  
+                
+                  ],
+                ),
+              ),           
+            ),
+
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 10, 20, 5), 
+              child: Form(
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Text('Restriccion', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),),
+                    SizedBox(width: 5,),
+                    Expanded(
+                        child: Container(
+                          padding: EdgeInsets.fromLTRB(15, 0, 10, 0),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton(
+                              isExpanded: true,
+                              items: <String>['Componentes', 'Categoria Alimento']
+                              .map<DropdownMenuItem<String>>((String value){
+                                return DropdownMenuItem<String>(
+                                  child: Text(value),
+                                  value: value,
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                restriccion = value;
+                                setState(() {
+                                  restriccion = value;
+                                });
+                              },
+                              hint: new Text(restriccion),
+                            ),
+                          ),
+                        ),
+                      ),                    
+                  ],
+                ),
+              ),           
+            ),
+
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 10, 20, 5),
+              child: Form(
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Expanded(
+                      child: Selector<ComponenteProvider, List<Components>>(
+                        selector: (context, model) => model.componentes,
+                        builder: (context, componentes, widget) => 
+                        Selector<EncuestaProvider, List<CategoriaAlimento>>(
+                          selector: (context, model) => model.categoriasAlimento,
+                          builder: (context, categorias, widget) => Column(
+                              children: <Widget>[
+                                Container(
+                                  padding: EdgeInsets.fromLTRB(15, 0, 10, 0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.all(Radius.circular(20))
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton(
+                                      isExpanded: true,                                             
+                                      items: getRestriccion(restriccion, componentes, categorias),
+                                      onChanged: (value){
+                                        if(restriccion == "Componentes"){
+                                          _selectedComponente = dropDownItemsMapComponentes[value];
+                                          setState(() {
+                                          _selectedComponente = dropDownItemsMapComponentes[value];
+                                          });
+                                        } if(restriccion == "Categoria Alimento") {
+                                          _selectedCategoria = dropDownItemsMapCategorias[value];
+                                          setState(() {
+                                          _selectedCategoria = dropDownItemsMapCategorias[value];
+                                          });
+                                        } else{}
+                                      },
+                                      hint: textoDos(restriccion, _selectedComponente, _selectedCategoria),
+                                    ),
+                                  ),
+                                )   
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                
+                  ],
+                ),
+              ),           
+            ),
+            
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 10, 20, 10), 
+              child: Form(
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Text('Tipo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),),
+                    SizedBox(width: 5,),
+                    Expanded(
+                        child: Container(
+                          padding: EdgeInsets.fromLTRB(15, 0, 10, 0),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton(
+                              isExpanded: true,
+                              items: <String>['completa', 'parcial']
+                              .map<DropdownMenuItem<String>>((String value){
+                                return DropdownMenuItem<String>(
+                                  child: Text(value),
+                                  value: value,
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                tipo = value;
+                                setState(() {
+                                  tipo = value;
+                                });
+                              },
+                              hint: new Text(tipo),
+                            ),
+                          ),
+                        ),
+                      ),                    
+                  ],
+                ),
+              ),           
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(15, 0, 15, 0),
+              child: SizedBox(
+                width: double.infinity,
+                child: new RaisedButton(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  onPressed: (){
+                    registrarRestriccion();
+                  },
+                  padding: EdgeInsets.all(12),
+                  color: Colors.green,
+                  child: Text(
+                    'Registrar', 
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20
+                    ),
+                  ),
+                ), 
+              )
+            ),
+
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 20), 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.max,
+                children: <Widget>[
+                  Selector<RestriccionProvider, Tuple2<List<Restriccion>, bool>> (
+                    selector: (context, model) => Tuple2(model.restricciones, model.loading ),
+                    builder: (context, model, widget) => Column(
+                      children: <Widget>[
+                        if (!model.item2) ...[
+                          if (model.item1.length > 0) ...[
+                            Table(
+                              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                              columnWidths: {                  
+                                0: FlexColumnWidth(1),
+                                1: FixedColumnWidth(40),
+                                2: FixedColumnWidth(40),
+                              },
+                              children: getTableRows(model.item1)
+                            )
+                          ] else ...[
+                            Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Text(
+                                    'Lista Vacía',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 32
+                                    ),
+                                  ),
+                                  FaIcon(
+                                    FontAwesomeIcons.listAlt,
+                                    size: 60,
+                                  )
+                                ],
+                              )
+                            )
+                          ]
+                        ] else ...[
+                          Center(
+                            child: SizedBox(
+                              height: 30,
+                              width: 30,
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        ]
+                      ]
+                    ),
+                  ), 
+                ]
+              ) 
+            )
+          ],
+        )
+      )
+    );
+  }
+
+  showAlertDialog(BuildContext context, int id) {
+    // set up the buttons
+    Widget cancelButton = FlatButton(
+      child: Text("Cancelar"),
+      onPressed:  () {
+        Navigator.of(context).pop();
+      },
+    );
+    Widget continueButton = FlatButton(
+      child: Text("Eliminar"),
+      onPressed:  () {
+        Dialogs.mostrarLoadingDialog(context,_keyLoader, "Actualizando");
+          restriccionProv.eliminarRestricciones(id).then((value) {
+            Navigator.of(_keyLoader.currentContext,rootNavigator: true).pop();
+            if (value) {
+              Navigator.of(context).pop();
+              Dialogs.mostrarDialog(context, "Éxito", "Restricción eliminada con éxito");
+            }else {
+              Navigator.of(context).pop();
+              Dialogs.mostrarDialog(context, "Error", "Error al eliminar");
+            }
+          });
+      },
+    );
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Eliminar Restricción"),
+      content: Text("¿Estas seguro de eliminar esta Restricción?"),
+      actions: [
+        cancelButton,
+        continueButton,
+      ],
+    );
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  showUpdDialog(BuildContext context, int id, String aler) {
+    final GlobalKey<FormState> _uKey = GlobalKey<FormState>();
+    String tip= aler;
+    Widget cancelButton = FlatButton(
+      child: Text("Cancelar"),
+      onPressed:  () {
+        Navigator.of(context).pop();
+      },
+    );
+    Widget continueButton = FlatButton(
+      child: Text("Actualizar"),
+      onPressed:  () {
+        if (_uKey.currentState.validate()) {
+          _uKey.currentState.save();
+          Dialogs.mostrarLoadingDialog(context,_keyLoader, "Actualizando");
+          restriccionProv.actualizarRestricciones(id, tip).then((value) {
+            Navigator.of(_keyLoader.currentContext,rootNavigator: true).pop();
+            if (value) {
+              Navigator.of(context).pop();
+              Dialogs.mostrarDialog(context, "Éxito", "Restricción actualizada con éxito");
+            }else {
+              Navigator.of(context).pop();
+              Dialogs.mostrarDialog(context, "Error", "Error al actualizar");
+            }
+          });
+        }
+      },
+    );
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Actualizar Restricción"),
+      content: Form(
+        key: _uKey,
+        child: Container(
+          padding: EdgeInsets.fromLTRB(15, 0, 10, 0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton(
+              isExpanded: true,
+              items: <String>['completa', 'parcial']
+              .map<DropdownMenuItem<String>>((String value){
+                return DropdownMenuItem<String>(
+                  child: Text(value),
+                  value: value,
+                );
+              }).toList(),
+              onChanged: (value) {
+                tip = value;
+                setState(() {
+                  tip = value;
+                });
+              },
+              hint: new Text(tip),
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        cancelButton,
+        continueButton
+      ],
+    );
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+}
