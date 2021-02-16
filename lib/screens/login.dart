@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../utils/form_validator.dart';
 import '../models/login_request_data.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:async'; 
+import 'dart:async';
 
 class Login extends StatefulWidget {
   Login() : super();
@@ -18,8 +18,8 @@ class Login extends StatefulWidget {
 
 Future<String> verifySession() async {
   final storage = new FlutterSecureStorage();
-    String value = await storage.read(key: "id_usuario");
-    return value;
+  String value = await storage.read(key: "id_usuario");
+  return value;
 }
 
 class _LoginState extends State<Login> {
@@ -29,26 +29,35 @@ class _LoginState extends State<Login> {
   LoginRequestData _loginData = LoginRequestData();
   bool _obscureText = true;
   UsuarioProvider authProv;
-  
+
   login() async {
-    Dialogs.mostrarLoadingDialog(context,_keyLoader, "Iniciando Sesión");
+    Dialogs.mostrarLoadingDialog(context, _keyLoader, "Iniciando Sesión");
     authProv.logIn(_loginData.email, _loginData.password).then((value) {
-      if(value != null){
-        if(value.id_usuario == null) {
-          Navigator.of(_keyLoader.currentContext,rootNavigator: true).pop();
-          Dialogs.mostrarDialog(context,"Advertencia","Debes Verificar tu correo electrónico");
+      if (value != null) {
+        print(value);
+        if (value.id_usuario == null) {
+          if (value.advertencia == "Usuario Administrador aun no aprobado") {
+            Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+            Dialogs.mostrarDialog(context, "Advertencia",
+                "Los Administradores deben aprobar tu Solicitud");
+            return;
+          }
+          Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+          Dialogs.mostrarDialog(
+              context, "Advertencia", "Debes Verificar tu correo electrónico");
           return;
         }
         print(value.tipo);
         authProv.setUsuario(value);
         //authProv.saveIdUsuario(value.id_usuario.toString());
-        Navigator.of(_keyLoader.currentContext,rootNavigator: true).pop();
+        Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
         //Navigator.pop(context);
         Navigator.of(context).pushReplacementNamed('/lista_bares');
         // Navigator.pushNamedAndRemoveUntil(context, '/lista_bares', (_) => false);
-      }else{
-        Navigator.of(_keyLoader.currentContext,rootNavigator: true).pop();
-        Dialogs.mostrarDialog(context,"Error en el Inicio de Sesión","Usuario o Contraseña Incorrecta");
+      } else {
+        Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+        Dialogs.mostrarDialog(context, "Error en el Inicio de Sesión",
+            "Usuario o Contraseña Incorrecta");
       }
     });
   }
@@ -56,7 +65,7 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     authProv = Provider.of<UsuarioProvider>(context);
-    
+
     /* authProv.getIdUsuario().then((id_usuario) {
       print("id usuario: ");
       print(id_usuario);
@@ -68,68 +77,61 @@ class _LoginState extends State<Login> {
         });
       }
     }); */
-    
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      //resizeToAvoidBottomInset: false,
-      body: SingleChildScrollView(    // new line
-        child:Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[              
-            new Container(
-              height: 400,
-              color: Colors.green,
-              child: Column(
+        backgroundColor: Colors.white,
+        //resizeToAvoidBottomInset: false,
+        body: SingleChildScrollView(
+            // new line
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.max,
                 children: <Widget>[
-                  Image(
-                    image: AssetImage("assets/images/logo_utm.png"),
-                    height: 180,
-                  ),
-                  SizedBox(height: 10),
-                  new Text.rich(
-                    TextSpan(
-                      text: 'Cognitive Self Service',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 40,
-                        color: Colors.white
-                      )
-                    ),          
-                    textAlign : TextAlign.center,
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    height: 40,   
-                    decoration: BoxDecoration(              
-                      color: Colors.white,
-                      borderRadius: new BorderRadius.only(
-                        topLeft: const Radius.circular(40.0),
-                        topRight: const Radius.circular(40.0),
-                      )
-                    ),   
-                  ),
-                ],
-              )
-            ),
-            Container(
-              padding: new EdgeInsets.fromLTRB(40, 0, 40, 20),
-              child: new Form(
-                key: _key,
-                autovalidate: _validate,
-                child: _getFormUI(),
-              )            
-            ),
-          ]
-        )
-      )
-    );
+              new Container(
+                  height: 400,
+                  color: Colors.green,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      Image(
+                        image: AssetImage("assets/images/logo_utm.png"),
+                        height: 180,
+                      ),
+                      SizedBox(height: 10),
+                      new Text.rich(
+                        TextSpan(
+                            text: 'Cognitive Self Service',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 40,
+                                color: Colors.white)),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 10),
+                      Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: new BorderRadius.only(
+                              topLeft: const Radius.circular(40.0),
+                              topRight: const Radius.circular(40.0),
+                            )),
+                      ),
+                    ],
+                  )),
+              Container(
+                  padding: new EdgeInsets.fromLTRB(40, 0, 40, 20),
+                  child: new Form(
+                    key: _key,
+                    autovalidate: _validate,
+                    child: _getFormUI(),
+                  )),
+            ])));
   }
 
-  Widget _getFormUI(){
+  Widget _getFormUI() {
     return new Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -139,49 +141,50 @@ class _LoginState extends State<Login> {
           keyboardType: TextInputType.emailAddress,
           autofocus: false,
           decoration: InputDecoration(
-            prefixIcon: Icon(Icons.person),
-            hintText: 'Correo',
-            contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))
-          ),
+              prefixIcon: Icon(Icons.person),
+              hintText: 'Correo',
+              contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
           validator: FormValidator().validateEmail,
-          onSaved: (String value){
+          onSaved: (String value) {
             _loginData.email = value;
           },
         ),
         SizedBox(height: 20),
         new TextFormField(
-          keyboardType: TextInputType.visiblePassword,
-          autofocus: false,
-          obscureText: _obscureText,
-          decoration: InputDecoration(            
-            prefixIcon: Icon(Icons.lock),
-            hintText: 'Contraseña',
-            contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 0.0, 15.0),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            suffixIcon: GestureDetector(
-              onTap: (){
-                setState(() {
-                  _obscureText = !_obscureText;
-                });
-              },
-              child: Icon(
-                _obscureText ? Icons.visibility : Icons.visibility_off,
-                semanticLabel: _obscureText ? 'Mostrar Contraseña' : 'Ocultar Contraseña',
-              ),
-            )
-          ),
-          validator: FormValidator().validatePassword,
-          onSaved: (String value){
-            _loginData.password = value;
-          }
-        ),
+            keyboardType: TextInputType.visiblePassword,
+            autofocus: false,
+            obscureText: _obscureText,
+            decoration: InputDecoration(
+                prefixIcon: Icon(Icons.lock),
+                hintText: 'Contraseña',
+                contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 0.0, 15.0),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                suffixIcon: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _obscureText = !_obscureText;
+                    });
+                  },
+                  child: Icon(
+                    _obscureText ? Icons.visibility : Icons.visibility_off,
+                    semanticLabel: _obscureText
+                        ? 'Mostrar Contraseña'
+                        : 'Ocultar Contraseña',
+                  ),
+                )),
+            validator: FormValidator().validatePassword,
+            onSaved: (String value) {
+              _loginData.password = value;
+            }),
         SizedBox(height: 20),
         new RaisedButton(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-          onPressed: (){
+          onPressed: () {
             if (_key.currentState.validate()) {
               _key.currentState.save();
               print("Email ${_loginData.email}");
@@ -197,34 +200,26 @@ class _LoginState extends State<Login> {
           padding: EdgeInsets.all(12),
           color: Colors.green,
           child: Text(
-            'Iniciar Sesión', 
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20
-            ),
+            'Iniciar Sesión',
+            style: TextStyle(color: Colors.white, fontSize: 20),
           ),
-        ),        
+        ),
         SizedBox(height: 5),
         new Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('¿No tienes cuenta?,',style: TextStyle(color: Colors.black54)),
+            Text('¿No tienes cuenta?,',
+                style: TextStyle(color: Colors.black54)),
             new FlatButton(
-              onPressed: (){
-                Navigator.pushNamed(context, '/registrar_usuario');
-              }, 
-              child: Text(
-                'Regístrate',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold
-                )
-              )
-            )
+                onPressed: () {
+                  Navigator.pushNamed(context, '/registrar_usuario');
+                },
+                child: Text('Regístrate',
+                    style: TextStyle(
+                        color: Colors.green, fontWeight: FontWeight.bold)))
           ],
-        )        
+        )
       ],
     );
   }
-
 }
